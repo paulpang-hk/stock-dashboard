@@ -1,5 +1,9 @@
 import streamlit as st
 import yfinance as yf
+from streamlit_autorefresh import st_autorefresh
+
+# 設定每 30 秒 (30000 毫秒) 自動重新載入頁面數據
+st_autorefresh(interval=30000, key="datarefresh")
 
 st.set_page_config(page_title="全球股市 Dashboard", layout="wide")
 st.title("🌐 全球主要股市與龍頭股實時監控")
