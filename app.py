@@ -2,12 +2,13 @@ import streamlit as st
 import yfinance as yf
 from streamlit_autorefresh import st_autorefresh
 
-# 設定每 30 秒 (30000 毫秒) 自動重新載入頁面數據
-st_autorefresh(interval=30000, key="datarefresh")
+# 設定每 10 秒 (10000 毫秒) 自動重新載入頁面數據
+st_autorefresh(interval=10000, key="datarefresh")
 
 st.set_page_config(page_title="全球股市 Dashboard", layout="wide")
 st.title("🌐 全球主要股市與龍頭股實時監控")
 
+# 在這裡隨時新增、刪除或修改你的股票清單！
 targets = {
     "主要股市指數": {
         "恒生指數 (HK)": "^HSI",
@@ -24,6 +25,13 @@ targets = {
         "豐田汽車 (7203)": "7203.T",
         "三星電子 (005930)": "005930.KS",
         "NVIDIA (NVDA)": "NVDA"
+    },
+    "⭐ 我的自選股": {
+        "Tesla (TSLA)": "TSLA",
+        "Apple (AAPL)": "AAPL",
+        "美團 (3690)": "3690.HK",
+        "匯豐控股 (0005)": "0005.HK",
+        "Colgate-Palmolive (CL)": "CL"
     }
 }
 
