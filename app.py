@@ -35,6 +35,92 @@ targets = {
     }
 }
 
+def create_dynamic_sparkline(hist, prev_close):
+    fig = go.Figure()
+    if hist.empty:
+        return fig
+        
+    x_vals = hist.index.tolist()
+    y_vals = hist["Close"].tolist()
+    ref_val = prev_close
+    
+    # 1. 加入昨收基準線 (灰色點線)
+    fig.add_trace(go.Scatter(
+        x=[x_vals[0], x_vals[-1]],
+        y=[ref_val, ref_val],
+        mode="lines",
+        line=dict(color="rgba(150, 150, 150, 0.6)", width=1, dash="dot"),
+        hoverinfo="none",
+        showlegend=False
+    ))
+    
+    # 2. 計算與昨收基準線的交點，確保顏色切換平滑
+    new_x = []
+    new_y = []
+    for i in range(len(y_vals) - 1):
+        x1, x2 = x_vals[i], x_vals[i+1]
+        y1, y2 = y_vals[i], y_vals[i+1]
+        new_x.append(x1)
+        new_y.append(y1)
+        
+        if (y1 < ref_val and y2 > ref_val) or (y1 > ref_val and y2 < ref_val):
+            t = (ref_val - y1) / (y2 - y1)
+            x_cross = x1 + (x2 - x1) * t
+            new_x.append(x_cross)
+            new_y.append(ref_val)
+            
+    new_x.append(x_vals[-1])
+    new_y.append(y_vals[-1])
+    
+    # 3. 分割為高於昨收 (綠色) 與低於昨收 (紅色) 的線段
+    curr_x = [new_x[0]]
+    curr_y = [new_y[0]]
+    curr_above = new_y[0] >= ref_val
+    
+    for i in range(1, len(new_y)):
+        val = new_y[i]
+        is_above = val >= ref_val
+        
+        if val == ref_val:
+            curr_x.append(new_x[i])
+            curr_y.append(new_y[i])
+        elif is_above == curr_above:
+            curr_x.append(new_x[i])
+            curr_y.append(new_y[i])
+        else:
+            color = "#00c805" if curr_above else "#ff5000"
+            fig.add_trace(go.Scatter(
+                x=curr_x, y=curr_y,
+                mode="lines",
+                line=dict(color=color, width=2),
+                hoverinfo="none",
+                showlegend=False
+            ))
+            curr_x = [curr_x[-1], new_x[i]]
+            curr_y = [curr_y[-1], new_y[i]]
+            curr_above = is_above
+            
+    color = "#00c805" if curr_above else "#ff5000"
+    fig.add_trace(go.Scatter(
+        x=curr_x, y=curr_y,
+        mode="lines",
+        line=dict(color=color, width=2),
+        hoverinfo="none",
+        showlegend=False
+    ))
+    
+    # 4. 隱藏座標軸與背景
+    fig.update_layout(
+        margin=dict(l=0, r=0, t=0, b=0),
+        height=50,
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(visible=False),
+        yaxis=dict(visible=False, autorange=True),
+        showlegend=False
+    )
+    return fig
+
 for category, items in targets.items():
     st.markdown(f"### 📌 {category}")
     cols = st.columns(len(items))
@@ -49,40 +135,15 @@ for category, items in targets.items():
             change = price - prev_close
             pct_change = (change / prev_close) * 100
             
-            # 1. 顯示頂部數據卡片
             col.metric(
                 label=name,
                 value=f"{price:,.2f}",
                 delta=f"{change:+.2f} ({pct_change:+.2f}%)"
             )
             
-            # 2. 抓取當日 15 分鐘級別走勢數據
             hist = stock.history(period="1d", interval="15m")
             if not hist.empty:
-                # 正數顯示綠色，負數顯示紅色
-                line_color = "#00c805" if change >= 0 else "#ff5000"
-                
-                # 建立精簡 Sparkline 走勢圖
-                fig = go.Figure()
-                fig.add_trace(go.Scatter(
-                    x=hist.index,
-                    y=hist["Close"],
-                    mode="lines",
-                    line=dict(color=line_color, width=2),
-                    hoverinfo="none"
-                ))
-                
-                # 隱藏 X/Y 軸文字，自動放縮 Y 軸範圍
-                fig.update_layout(
-                    margin=dict(l=0, r=0, t=0, b=0),
-                    height=50,
-                    paper_bgcolor="rgba(0,0,0,0)",
-                    plot_bgcolor="rgba(0,0,0,0)",
-                    xaxis=dict(visible=False),
-                    yaxis=dict(visible=False, autorange=True),
-                    showlegend=False
-                )
-                
+                fig = create_dynamic_sparkline(hist, prev_close)
                 col.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
         except Exception:
             col.error(f"{name} 載入失敗")
