@@ -2,13 +2,12 @@ import streamlit as st
 import yfinance as yf
 from streamlit_autorefresh import st_autorefresh
 
-# 設定每 10 秒 (10000 毫秒) 自動重新載入頁面數據
-st_autorefresh(interval=10000, key="datarefresh")
+# 設定每 30 秒自動刷新數據 (可視需求調整為 10000 毫秒 / 10 秒)
+st_autorefresh(interval=30000, key="datarefresh")
 
 st.set_page_config(page_title="全球股市 Dashboard", layout="wide")
-st.title("🌐 全球主要股市與龍頭股實時監控")
+st.title("🌐 全球主要股市與龍頭股實時監控 (含走勢圖)")
 
-# 在這裡隨時新增、刪除或修改你的股票清單！
 targets = {
     "主要股市指數": {
         "恒生指數 (HK)": "^HSI",
@@ -31,27 +30,40 @@ targets = {
         "Apple (AAPL)": "AAPL",
         "美團 (3690)": "3690.HK",
         "匯豐控股 (0005)": "0005.HK",
-        "Colgate-Palmolive (CL)": "CL"
+        "Bitcoin (BTC)": "BTC-USD"
     }
 }
 
 for category, items in targets.items():
     st.markdown(f"### 📌 {category}")
     cols = st.columns(len(items))
+    
     for col, (name, ticker) in zip(cols, items.items()):
         try:
             stock = yf.Ticker(ticker)
-            info = stock.fast_info
             
+            # 1. 抓取當前實時報價
+            info = stock.fast_info
             price = info.last_price
             prev_close = info.previous_close
             change = price - prev_close
             pct_change = (change / prev_close) * 100
             
+            # 2. 顯示頂部數據卡片
             col.metric(
                 label=name,
                 value=f"{price:,.2f}",
                 delta=f"{change:+.2f} ({pct_change:+.2f}%)"
             )
+            
+            # 3. 抓取當日 15 分鐘級別的走勢數據並繪製迷你面積圖 (Sparkline)
+            hist = stock.history(period="1d", interval="15m")
+            if not hist.empty:
+                # 僅留下收盤價價格欄位繪圖，設定高度為 70px 保持簡潔
+                col.area_chart(
+                    hist["Close"], 
+                    height=70, 
+                    use_container_width=True
+                )
         except Exception:
             col.error(f"{name} 載入失敗")
