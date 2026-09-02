@@ -1,12 +1,13 @@
 import streamlit as st
 import yfinance as yf
+import plotly.graph_objects as go
 from streamlit_autorefresh import st_autorefresh
 
-# 設定每 30 秒自動刷新數據 (可視需求調整為 10000 毫秒 / 10 秒)
+# 每 30 秒自動刷新數據
 st_autorefresh(interval=30000, key="datarefresh")
 
 st.set_page_config(page_title="全球股市 Dashboard", layout="wide")
-st.title("🌐 全球主要股市與龍頭股實時監控 (含走勢圖)")
+st.title("🌐 全球主要股市與龍頭股實時監控")
 
 targets = {
     "主要股市指數": {
@@ -41,29 +42,47 @@ for category, items in targets.items():
     for col, (name, ticker) in zip(cols, items.items()):
         try:
             stock = yf.Ticker(ticker)
-            
-            # 1. 抓取當前實時報價
             info = stock.fast_info
+            
             price = info.last_price
             prev_close = info.previous_close
             change = price - prev_close
             pct_change = (change / prev_close) * 100
             
-            # 2. 顯示頂部數據卡片
+            # 1. 顯示頂部數據卡片
             col.metric(
                 label=name,
                 value=f"{price:,.2f}",
                 delta=f"{change:+.2f} ({pct_change:+.2f}%)"
             )
             
-            # 3. 抓取當日 15 分鐘級別的走勢數據並繪製迷你面積圖 (Sparkline)
+            # 2. 抓取當日 15 分鐘級別走勢數據
             hist = stock.history(period="1d", interval="15m")
             if not hist.empty:
-                # 僅留下收盤價價格欄位繪圖，設定高度為 70px 保持簡潔
-                col.area_chart(
-                    hist["Close"], 
-                    height=70, 
-                    use_container_width=True
+                # 正數顯示綠色，負數顯示紅色
+                line_color = "#00c805" if change >= 0 else "#ff5000"
+                
+                # 建立精簡 Sparkline 走勢圖
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(
+                    x=hist.index,
+                    y=hist["Close"],
+                    mode="lines",
+                    line=dict(color=line_color, width=2),
+                    hoverinfo="none"
+                ))
+                
+                # 隱藏 X/Y 軸文字，自動放縮 Y 軸範圍
+                fig.update_layout(
+                    margin=dict(l=0, r=0, t=0, b=0),
+                    height=50,
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    xaxis=dict(visible=False),
+                    yaxis=dict(visible=False, autorange=True),
+                    showlegend=False
                 )
+                
+                col.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
         except Exception:
             col.error(f"{name} 載入失敗")
