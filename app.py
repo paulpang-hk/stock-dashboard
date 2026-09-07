@@ -19,11 +19,15 @@ targets = {
         "美國 S&P 500 (US)": "^GSPC"
     },
     "⭐ 我的自選股": {
-        "Tesla (TSLA)": "TSLA",
         "Apple (AAPL)": "AAPL",
         "SpaceX (SPCX)": "SPCX",
+        "Google (GOOGL)": "GOOGL",
         "Broadcom (AVGO)": "AVGO",
         "NIKE (NKE)": "NKE",
+        "Amazon (AMZN)": "AMZN",
+        "NVIDIA (NVD)": "NVD",
+        "Vistra Corp (VST)": "VST",
+        "Tempus AI (TEM)": "TEM",
         "匯豐控股 (0005)": "0005.HK",
     }
 }
