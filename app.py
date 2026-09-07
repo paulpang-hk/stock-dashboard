@@ -9,31 +9,26 @@ st_autorefresh(interval=30000, key="datarefresh")
 st.set_page_config(page_title="全球股市 Dashboard", layout="wide")
 st.title("🌐 全球主要股市與龍頭股實時監控")
 
+# 格式改為： "顯示名稱": ("Ticker代碼", 目標價 or None)
 targets = {
-    "主要股市指數": {
-        "恒生指數 (HK)": "^HSI",
-        "上證指數 (CN)": "000001.SS",
-        "台灣加權 (TW)": "^TWII",
-        "日經 225 (JP)": "^N225",
-        "韓國 KOSPI (KR)": "^KS11",
-        "美國 S&P 500 (US)": "^GSPC",
-        "NASDAQ-100 (US)": "^NDX"
-    },
-    "⭐ 我的自選股": {
-        "Apple (AAPL)": "AAPL",
-        "Google (GOOGL)": "GOOGL",
-        "Broadcom (AVGO)": "AVGO",
-        "NIKE (NKE)": "NKE",
-        "Amazon (AMZN)": "AMZN",
-        "NVIDIA (NVDA)": "NVDA",  # 修正: NVD -> NVDA
-        "Vistra Corp (VST)": "VST",
-        "Tempus AI (TEM)": "TEM"
-    },
-    "🇭🇰 港股重點股": {  # 修正: 補上缺失的字典分類 Key
-        "匯豐控股 (0005)": "0005.HK",
-        "中國海洋石油 (0883)": "0883.HK",
-        "中國移動 (0941)": "0941.HK"
-    }
+    "恒生指數 (HK)": ("^HSI", None),
+    "上證指數 (CN)": ("000001.SS", None),
+    "台灣加權 (TW)": ("^TWII", None),
+    "日經 225 (JP)": ("^N225", None),
+    "韓國 KOSPI (KR)": ("^KS11", None),
+    "美國 S&P 500 (US)": ("^GSPC", None),
+    "NASDAQ-100 (US)": ("^NDX", None),
+    "Apple (AAPL)": ("AAPL", None),
+    "Google (GOOGL)": ("GOOGL", None),
+    "Broadcom (AVGO)": ("AVGO", None),
+    "NIKE (NKE)": ("NKE", None),
+    "Amazon (AMZN)": ("AMZN", None),
+    "NVIDIA (NVDA)": ("NVDA", None),
+    "Vistra Corp (VST)": ("VST", None),
+    "Tempus AI (TEM)": ("TEM", None),
+    "匯豐控股 (0005)": ("0005.HK", None),
+    "中國海洋石油 (0883)": ("0883.HK", 22.5),  # 👈 直接在這裡設定目標價 (例如 24.0)
+    "中國移動 (0941)": ("0941.HK", 73.0)       # 👈 直接在這裡設定目標價 (例如 85.0)
 }
 
 def create_dynamic_sparkline(hist, prev_close):
@@ -55,7 +50,7 @@ def create_dynamic_sparkline(hist, prev_close):
         showlegend=False
     ))
     
-    # 2. 計算與昨收基準線的交點，確保顏色切換平滑
+    # 2. 計算與昨收基準線的交點
     new_x, new_y = [], []
     for i in range(len(y_vals) - 1):
         x1, x2 = x_vals[i], x_vals[i+1]
@@ -72,7 +67,7 @@ def create_dynamic_sparkline(hist, prev_close):
     new_x.append(x_vals[-1])
     new_y.append(y_vals[-1])
     
-    # 3. 分割為高於昨收 (綠色) 與低於昨收 (紅色) 的線段
+    # 3. 分割漲跌線段 (綠高紅低)
     curr_x = [new_x[0]]
     curr_y = [new_y[0]]
     curr_above = new_y[0] >= ref_val
@@ -118,36 +113,39 @@ def create_dynamic_sparkline(hist, prev_close):
     )
     return fig
 
-# 渲染數據卡片 (使用每行最多 4 個卡片防止畫面擠壓)
+# 渲染卡片
 MAX_COLS = 4
+item_list = list(targets.items())
 
-for category, items in targets.items():
-    st.markdown(f"### 📌 {category}")
-    item_list = list(items.items())
+for i in range(0, len(item_list), MAX_COLS):
+    chunk = item_list[i : i + MAX_COLS]
+    cols = st.columns(len(chunk))
     
-    for i in range(0, len(item_list), MAX_COLS):
-        chunk = item_list[i : i + MAX_COLS]
-        cols = st.columns(len(chunk))
-        
-        for col, (name, ticker) in zip(cols, chunk):
-            try:
-                stock = yf.Ticker(ticker)
-                info = stock.fast_info
-                
-                price = info.last_price
-                prev_close = info.previous_close
-                change = price - prev_close
-                pct_change = (change / prev_close) * 100
-                
-                col.metric(
-                    label=name,
-                    value=f"{price:,.2f}",
-                    delta=f"{change:+.2f} ({pct_change:+.2f}%)"
-                )
-                
-                hist = stock.history(period="1d", interval="15m")
-                if not hist.empty:
-                    fig = create_dynamic_sparkline(hist, prev_close)
-                    col.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-            except Exception:
-                col.error(f"{name} 載入失敗")
+    for col, (name, (ticker, target_price)) in zip(cols, chunk):
+        try:
+            stock = yf.Ticker(ticker)
+            info = stock.fast_info
+            
+            price = info.last_price
+            prev_close = info.previous_close
+            change = price - prev_close
+            pct_change = (change / prev_close) * 100
+            
+            # 顯示主要數據
+            col.metric(
+                label=name,
+                value=f"{price:,.2f}",
+                delta=f"{change:+.2f} ({pct_change:+.2f}%)"
+            )
+            
+            # 👈 如果有設定目標價，在下方顯示目標價與距離空間
+            if target_price:
+                gap_pct = ((target_price - price) / price) * 100
+                col.caption(f"🎯 目標價: **{target_price:,.2f}** ({gap_pct:+.1f}%)")
+            
+            hist = stock.history(period="1d", interval="15m")
+            if not hist.empty:
+                fig = create_dynamic_sparkline(hist, prev_close)
+                col.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+        except Exception:
+            col.error(f"{name} 載入失敗")
