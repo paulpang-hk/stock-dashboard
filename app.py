@@ -18,20 +18,13 @@ targets = {
         "韓國 KOSPI (KR)": "^KS11",
         "美國 S&P 500 (US)": "^GSPC"
     },
-    "市場市值龍頭": {
-        "騰訊控股 (0700)": "0700.HK",
-        "貴州茅台 (600519)": "600519.SS",
-        "台積電 (2330)": "2330.TW",
-        "豐田汽車 (7203)": "7203.T",
-        "三星電子 (005930)": "005930.KS",
-        "NVIDIA (NVDA)": "NVDA"
-    },
     "⭐ 我的自選股": {
         "Tesla (TSLA)": "TSLA",
         "Apple (AAPL)": "AAPL",
-        "美團 (3690)": "3690.HK",
+        "SpaceX (SPCX)": "SPCX",
+        "Broadcom (AVGO)": "AVGO",
+        "NIKE (NKE)": "NKE",
         "匯豐控股 (0005)": "0005.HK",
-        "Bitcoin (BTC)": "BTC-USD"
     }
 }
 
