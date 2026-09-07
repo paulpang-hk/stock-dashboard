@@ -29,6 +29,8 @@ targets = {
         "NVIDIA (NVD)": "NVD",
         "Vistra Corp (VST)": "VST",
         "Tempus AI (TEM)": "TEM",
+    },
+    {
         "匯豐控股 (0005)": "0005.HK",
         "中國海洋石油 (0883)": "0883.HK",
         "中國移動 (0941)": "0941.HK"
