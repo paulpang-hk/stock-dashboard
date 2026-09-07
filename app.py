@@ -16,7 +16,8 @@ targets = {
         "台灣加權 (TW)": "^TWII",
         "日經 225 (JP)": "^N225",
         "韓國 KOSPI (KR)": "^KS11",
-        "美國 S&P 500 (US)": "^GSPC"
+        "美國 S&P 500 (US)": "^GSPC",
+        "NASDAQ-100 (US)": "^NDX"
     },
     "⭐ 我的自選股": {
         "Apple (AAPL)": "AAPL",
