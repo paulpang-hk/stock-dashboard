@@ -19,6 +19,7 @@ targets = {
     "美國 S&P 500 (US)": ("^GSPC", None),
     "NASDAQ-100 (US)": ("^NDX", None),
     "Apple (AAPL)": ("AAPL", None),
+    "Space X (SPCX)": ("SPCX", 145.0),
     "Google (GOOGL)": ("GOOGL", None),
     "Broadcom (AVGO)": ("AVGO", None),
     "NIKE (NKE)": ("NKE", None),
